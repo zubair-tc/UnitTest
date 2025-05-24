@@ -191,16 +191,16 @@ namespace HMSSoft.Services.Tests
         public async Task GetByDoctorIdAsync_WhenExists_ReturnsAppointmentDtos()
         {
             var testAppointments = new List<Appointment>
-    {
-        new Appointment
-        {
-            Id = 1,
-            Patient = new Patient { Id = 1, Name = "daud",Gender = "Male", PhoneNumber="5456567" },
-            Doctor = new Doctor { Id = 1, Name = "Dr. Smith" },
-            Reason = "Checkup",
-            Date = DateTime.Now,
-            PatientId = 1,
-            DoctorId = 1
+            {
+              new Appointment
+              {
+                 Id = 1,
+                 Patient = new Patient { Id = 1, Name = "daud",Gender = "Male", PhoneNumber="5456567" },
+                 Doctor = new Doctor { Id = 1, Name = "Dr. Smith" },
+                 Reason = "Checkup",
+                 Date = DateTime.Now,
+                 PatientId = 1,
+                 DoctorId = 1
         },
         new Appointment
         {
@@ -212,7 +212,7 @@ namespace HMSSoft.Services.Tests
             PatientId = 2,
             DoctorId = 1
         }
-    };
+            };
 
             _mockRepo.Setup(r => r.GetByDoctorIdAsync(1)).ReturnsAsync(testAppointments);
 
@@ -227,14 +227,14 @@ namespace HMSSoft.Services.Tests
             var testAppointments = new List<Appointment>
             {
                 new Appointment { Id = 1,
-                    Reason = "Checkup", 
+                    Reason = "Checkup",
                     Date = DateTime.Now,
                     PatientId = 1,
                     DoctorId = 1 },
                 new Appointment { Id = 2,
                     Reason = "Follow-up",
                     Date = DateTime.Now.AddDays(1),
-                    PatientId = 1, 
+                    PatientId = 1,
                     DoctorId = 1 }
             };
 
