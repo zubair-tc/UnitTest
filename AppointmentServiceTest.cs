@@ -2,6 +2,7 @@
 using HMSSoft.Core.Entities;
 using HMSSoft.Core.Repositories;
 using Moq;
+using UnitTest;
 
 namespace HMSSoft.Services.Tests
 {
@@ -9,142 +10,96 @@ namespace HMSSoft.Services.Tests
     public class AppointmentServiceTests
     {
         private Mock<IAppointmentRepository> _mockRepo;
-        private AppointmentService _service;
+        private AppointmentService _sut;
 
         [SetUp]
         public void Setup()
         {
             _mockRepo = new Mock<IAppointmentRepository>();
-            _service = new AppointmentService(_mockRepo.Object);
+            _sut = new AppointmentService(_mockRepo.Object);
         }
 
         [Test]
-        public async Task GetAllAsync_ReturnsListOfAppointmentDtos()
+        public async Task GetAllAsync_ShouldReturnsListOfAppointmentDtos()
         {
-            var testappoitments = new List<Appointment>
-            {
-                new Appointment
-                {
-                    Id = 1,
-                    Reason = "Checkup",
-                    Date = DateTime.Now.AddDays(1),
-                    PatientId = 101,
-                    DoctorId = 201,
-                    Patient = new Patient { Id = 1, Name = "Zubair", Gender = "Male", PhoneNumber = "1213" }
-                },
-                 new Appointment
-                {
-                    Id = 2,
-                    Reason = "Checkup",
-                    Date = DateTime.Now.AddDays(1),
-                    PatientId = 11,
-                    DoctorId = 21,
-                    Patient = new Patient { Id = 1, Name = "Zubair", Gender = "Male", PhoneNumber = "1213" }
-                },
-            };
+            //Arrange
+            var testappoitments = MockData.GetSampleAppointments();
 
-            _mockRepo.Setup(repo => repo.GetAllAsync()).ReturnsAsync(testappoitments);
+            _mockRepo.Setup(repo => repo.GetAllAsync()).
+                ReturnsAsync(testappoitments);
 
-            var result = await _service.GetAllAsync();
-
-            Assert.That(result.Count, Is.EqualTo(2));
+            //Act
+            var result = await _sut.GetAllAsync();
+            //Assert
+            Assert.That(result[0].PatientName, Is.EqualTo("John Doe"));
         }
 
         [Test]
-        public async Task GetAllAsync_WhenNoAppointments_ReturnsEmptyList()
+        public async Task GetAllAsync_ReturnsEmptyList_IfNoAppointmentsExist()
         {
-            _mockRepo.Setup(r => r.GetAllAsync()).ReturnsAsync(new List<Appointment>());
-
-            var result = await _service.GetAllAsync();
-
+            //Arrange
+            _mockRepo.Setup(r => r.GetAllAsync()).
+                ReturnsAsync(new List<Appointment>());
+            //ACt
+            var result = await _sut.GetAllAsync();
+            //Assert
             Assert.That(result, Is.Empty);
         }
 
         [Test]
-        public async Task GetByIdAsync_WhenExists_ReturnsAppointmentDto()
+        public async Task GetByIdAsync_ShouldReturnsAppointmentDto()
         {
-            var testAppointment = new Appointment
-            {
-                Id = 1,
-                Reason = "Checkup",
-                Date = DateTime.Now,
-                PatientId = 1,
-                DoctorId = 1
-            };
-
-            _mockRepo.Setup(r => r.GetByIdAsync(1)).ReturnsAsync(testAppointment);
-
-            var result = await _service.GetByIdAsync(1);
-
+            //Arrange
+            var testAppointment = MockData.GetSampleAppointments().Single();
+           
+            _mockRepo.Setup(r => r.GetByIdAsync(1)).
+                ReturnsAsync(testAppointment);
+            //Act
+            var result = await _sut.GetByIdAsync(1);
+            //Assert
             Assert.That(result.Reason, Is.EqualTo("Checkup"));
         }
 
         [Test]
-        public async Task GetByIdAsync_WhenNotExists_ReturnsNull()
+        public async Task GetByIdAsync_ReturnsNull_IfNotExists()
         {
-            _mockRepo.Setup(r => r.GetByIdAsync(It.IsAny<int>())).ReturnsAsync((Appointment)null);
-
-            var result = await _service.GetByIdAsync(999);
-
+            //Arrange
+            _mockRepo.Setup(r => r.GetByIdAsync(It.IsAny<int>())).
+                ReturnsAsync((Appointment)null);
+            //Act
+            var result = await _sut.GetByIdAsync(999);
+            //Assert
             Assert.That(result, Is.Null);
         }
 
         [Test]
-        public async Task AddAsync_ValidDto_ReturnsNewAppointmentDto()
+        public async Task AddAsync_ShouldReturnsAddedAppointmentDto()
         {
-            var inputDto = new AppointmentDto
-            {
-                Reason = "Checkup",
-                Date = DateTime.Now,
-                PatientId = 1,
-                DoctorId = 1,
-                PatientName = "John"
-            };
+            //Arrange
+            var inputDto = MockData.GetSampleAppointmentDto();
 
-            var savedAppointment = new Appointment
-            {
-                Id = 1,
-                Reason = "Checkup",
-                Date = DateTime.Now,
-                PatientId = 1,
-                DoctorId = 1
-            };
+            var savedAppointment =MockData.GetSampleAppointments().Single();
 
             _mockRepo.Setup(r => r.AddAsync(It.IsAny<Appointment>()))
                     .ReturnsAsync(savedAppointment);
-
-            var result = await _service.AddAsync(inputDto);
-
-            Assert.That(result, Is.Not.Null);
+            //Act
+            var result = await _sut.AddAsync(inputDto);
+            //Assert
+            Assert.That(result.PatientName, Is.EqualTo("John Doe"));
         }
 
         [Test]
-        public async Task UpdateAsync_ValidDto_ReturnsUpdatedDto()
+        public async Task UpdateAsync_ShouldReturnsUpdatedDto()
         {
-            var inputDto = new AppointmentDto
-            {
-                Id = 1,
-                Reason = "Updated Checkup",
-                Date = DateTime.Now,
-                PatientId = 1,
-                DoctorId = 1
-            };
+            //Arrange
+            var inputDto = MockData.GetSampleAppointmentDto();
 
-            var updatedAppointment = new Appointment
-            {
-                Id = 1,
-                Reason = "Updated Checkup",
-                Date = DateTime.Now,
-                PatientId = 1,
-                DoctorId = 1
-            };
-
+            var updatedAppointment = MockData.GetSampleAppointments().First().WithReason("Updated Checkup");
             _mockRepo.Setup(r => r.UpdateAsync(It.IsAny<Appointment>()))
                     .ReturnsAsync(updatedAppointment);
-
-            var result = await _service.UpdateAsync(inputDto);
-
-            Assert.That(result, Is.Not.Null);
+            //Act
+            var result = await _sut.UpdateAsync(inputDto);
+            //Assert
             Assert.That(result.Reason, Is.EqualTo("Updated Checkup"));
         }
 
@@ -155,94 +110,61 @@ namespace HMSSoft.Services.Tests
             _mockRepo.Setup(r => r.UpdateAsync(It.IsAny<Appointment>()))
                     .ThrowsAsync(new KeyNotFoundException());
 
-            Assert.ThrowsAsync<KeyNotFoundException>(() => _service.UpdateAsync(inputDto));
+            Assert.ThrowsAsync<KeyNotFoundException>(() => _sut.UpdateAsync(inputDto));
         }
 
         [Test]
-        public async Task DeleteAsync_WhenExists_ReturnsDeletedDto()
+        public async Task DeleteAsync_ShouldReturnsDeletedDto()
         {
-            var deletedAppointment = new Appointment
-            {
-                Id = 1,
-                Reason = "Checkup",
-                Date = DateTime.Now,
-                PatientId = 1,
-                DoctorId = 1
-            };
+            //Arrange
+            var deletedAppointment = MockData.GetSampleAppointments().Single();
 
-            _mockRepo.Setup(r => r.DeleteAsync(1)).ReturnsAsync(deletedAppointment);
-
-            var result = await _service.DeleteAsync(1);
-
-            Assert.That(result, Is.Not.Null);
+            _mockRepo.Setup(r => r.DeleteAsync(1)).
+                ReturnsAsync(deletedAppointment);
+            //Act
+            var result = await _sut.DeleteAsync(1);
+            //Assert
+            Assert.That(result.DoctorName,Is.EqualTo("Dr. Smith"));
         }
 
         [Test]
-        public async Task DeleteAsync_WhenNotExists_ReturnsNull()
+        public async Task DeleteAsync_ReturnsNull_WhenNotExists()
         {
-            _mockRepo.Setup(r => r.DeleteAsync(It.IsAny<int>())).ReturnsAsync((Appointment)null);
-
-            var result = await _service.DeleteAsync(999);
-
+            //Arrange
+            _mockRepo.Setup(r => r.DeleteAsync(It.IsAny<int>())).
+                ReturnsAsync((Appointment)null);
+            //Act
+            var result = await _sut.DeleteAsync(999);
+            //Assert
             Assert.That(result, Is.Null);
         }
 
         [Test]
-        public async Task GetByDoctorIdAsync_WhenExists_ReturnsAppointmentDtos()
+        public async Task GetByDoctorIdAsync_ShouldReturnsAppointmentDtos()
         {
-            var testAppointments = new List<Appointment>
-            {
-              new Appointment
-              {
-                 Id = 1,
-                 Patient = new Patient { Id = 1, Name = "daud",Gender = "Male", PhoneNumber="5456567" },
-                 Doctor = new Doctor { Id = 1, Name = "Dr. Smith" },
-                 Reason = "Checkup",
-                 Date = DateTime.Now,
-                 PatientId = 1,
-                 DoctorId = 1
-        },
-        new Appointment
-        {
-            Id = 2,
-            Patient = new Patient { Id = 2, Name = "Munneb",Gender="Male",PhoneNumber="123" },
-            Doctor = new Doctor { Id = 1, Name = "Dr. Smith" },
-            Reason = "Follow-up",
-            Date = DateTime.Now.AddDays(1),
-            PatientId = 2,
-            DoctorId = 1
-        }
-            };
+            //Arrange
+            var testAppointments = MockData.GetSampleAppointments();
 
-            _mockRepo.Setup(r => r.GetByDoctorIdAsync(1)).ReturnsAsync(testAppointments);
-
-            var result = await _service.GetByDoctorIdAsync(1);
-
-            Assert.That(result.Count, Is.EqualTo(2));
+            _mockRepo.Setup(r => r.GetByDoctorIdAsync(1)).
+                ReturnsAsync(testAppointments);
+            //Act
+            var result = await _sut.GetByDoctorIdAsync(1);
+            //Assert
+            Assert.That(result[0].DoctorName, Is.EqualTo("Dr. Smith"));
 
         }
         [Test]
-        public async Task GetByPatientIdAsync_WhenExists_ReturnsAppointmentDtos()
+        public async Task GetByPatientIdAsync_ShouldReturnsAppointmentDtos()
         {
-            var testAppointments = new List<Appointment>
-            {
-                new Appointment { Id = 1,
-                    Reason = "Checkup",
-                    Date = DateTime.Now,
-                    PatientId = 1,
-                    DoctorId = 1 },
-                new Appointment { Id = 2,
-                    Reason = "Follow-up",
-                    Date = DateTime.Now.AddDays(1),
-                    PatientId = 1,
-                    DoctorId = 1 }
-            };
+            //Arrange
+            var testAppointments = MockData.GetSampleAppointments();
 
-            _mockRepo.Setup(r => r.GetByPatientIdAsync(1)).ReturnsAsync(testAppointments);
-
-            var result = await _service.GetByPatientIdAsync(1);
-
-            Assert.That(result.Count, Is.EqualTo(2));
+            _mockRepo.Setup(r => r.GetByPatientIdAsync(testAppointments[0].PatientId)).
+                ReturnsAsync(testAppointments);
+            //Act
+            var result = await _sut.GetByPatientIdAsync(1);
+            //Assert
+            Assert.That(result[0].DoctorName, Is.EqualTo("Dr. Smith"));
         }
     }
 }

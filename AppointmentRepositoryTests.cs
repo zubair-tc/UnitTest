@@ -2,13 +2,14 @@
 using HMSSoft.Repositories;
 using HMSSoft.Repositories.Data;
 using Microsoft.EntityFrameworkCore;
+using UnitTest;
 
 namespace HMSSoft.Tests.Repositories
 {
     public class AppointmentRepositoryTests
     {
         private HMSSoftDbContext _context = null!;
-        private AppointmentRepository _repository = null!;
+        private AppointmentRepository _sut = null!;
 
         [SetUp]
         public void Setup()
@@ -18,7 +19,7 @@ namespace HMSSoft.Tests.Repositories
                 .Options;
 
             _context = new HMSSoftDbContext(options);
-            _repository = new AppointmentRepository(_context);
+            _sut = new AppointmentRepository(_context);
         }
         [TearDown]
         public void TearDown()
@@ -30,23 +31,30 @@ namespace HMSSoft.Tests.Repositories
         [Test]
         public async Task AddAsync_ShouldAddAppointment()
         {
-            var appointment = new Appointment { DoctorId = 1, PatientId = 1, Date = DateTime.Now };
+            //Arrange 
+            var appointment = MockData.GetSampleAppointments().Single();
 
-            var result = await _repository.AddAsync(appointment);
+            //Act
+            var result = await _sut.AddAsync(appointment);
 
-            Assert.That(result, Is.Not.Null);
-            Assert.That(_context.Appointments.Count(), Is.EqualTo(1));
+            //Assert
+            Assert.That(result.PatientId, Is.EqualTo(1));
         }
 
         [Test]
         public async Task DeleteAsync_ShouldRemoveAppointment()
         {
-            var appointment = new Appointment { DoctorId = 1, PatientId = 1, Date = DateTime.Now };
+            //Arrange
+            var appointment = MockData.GetSampleAppointments().Single();
+
             _context.Appointments.Add(appointment);
+
             await _context.SaveChangesAsync();
 
-            var result = await _repository.DeleteAsync(appointment.Id);
+            //Act
+            var result = await _sut.DeleteAsync(appointment.Id);
 
+            //Assert
             var exists = await _context.Appointments.FindAsync(appointment.Id);
             Assert.That(exists, Is.Null, "Appointment Does not  exist in the database.");
 
@@ -55,8 +63,9 @@ namespace HMSSoft.Tests.Repositories
         [Test]
         public async Task GetAllAsync_ShouldReturnAppointments()
         {
+            //Arrange
             var doctor = new Doctor { Name = "Dr. Smith" };
-            var patient = new Patient { Name = "John Doe",Gender="Male",PhoneNumber="1223" };
+            var patient = new Patient { Name = "John Doe", Gender = "Male", PhoneNumber = "1223" };
             _context.Doctors.Add(doctor);
             _context.Patients.Add(patient);
             await _context.SaveChangesAsync();
@@ -68,33 +77,26 @@ namespace HMSSoft.Tests.Repositories
                 Date = DateTime.Now
             });
             await _context.SaveChangesAsync();
-
-            var result = await _repository.GetAllAsync();
-
-            Assert.That(result.Count(), Is.GreaterThan(0));
+            //ACt
+            var result = await _sut.GetAllAsync();
+            //Assert
+            Assert.That(result[0].Doctor.Name, Is.EqualTo("Dr. Smith"));
         }
 
         [Test]
         public async Task GetByIdAsync_ShouldReturnCorrectAppointment()
         {
-            var doctor = new Doctor { Name = "Dr. Smith" };
-            var patient = new Patient { Name = "John Doe" ,Gender="Male",PhoneNumber="1234"};
-            _context.Doctors.Add(doctor);
-            _context.Patients.Add(patient);
-            await _context.SaveChangesAsync();
+            //Arrange
+            var appointment = MockData.GetSampleAppointments().Single();
 
-            var appointment = new Appointment
-            {
-                DoctorId = doctor.Id,
-                PatientId = patient.Id,
-                Date = DateTime.Now
-            };
             _context.Appointments.Add(appointment);
+
             await _context.SaveChangesAsync();
 
-            var result = await _repository.GetByIdAsync(appointment.Id);
+            //Act
+            var result = await _sut.GetByIdAsync(appointment.Id);
 
-            Assert.That(result, Is.Not.Null);
+            //Assert
             Assert.That(result!.Id, Is.EqualTo(appointment.Id));
         }
 
@@ -102,43 +104,52 @@ namespace HMSSoft.Tests.Repositories
         [Test]
         public async Task GetByDoctorIdAsync_ShouldReturnMatchingAppointments()
         {
+            //Arrange
             _context.Appointments.AddRange(
-                new Appointment { DoctorId = 1, PatientId = 1, Date = DateTime.Now },
-                new Appointment { DoctorId = 2, PatientId = 1, Date = DateTime.Now }
+                MockData.GetSampleAppointments()
             );
             await _context.SaveChangesAsync();
 
-            var result = await _repository.GetByDoctorIdAsync(1);
+            //Act
+            var result = await _sut.GetByDoctorIdAsync(1);
 
-
-            Assert.That(result, Is.Not.Null);
+            //Assert
+            Assert.That(result[0].DoctorId, Is.EqualTo(1));
         }
 
         [Test]
         public async Task GetByPatientIdAsync_ShouldReturnMatchingAppointments()
         {
+            //Arrange
             _context.Appointments.AddRange(
-                new Appointment { DoctorId = 1, PatientId = 1, Date = DateTime.Now },
-                new Appointment { DoctorId = 2, PatientId = 2, Date = DateTime.Now }
+               MockData.GetSampleAppointments().Single()
+
             );
             await _context.SaveChangesAsync();
 
-            var result = await _repository.GetByPatientIdAsync(1);
+            //Act
+            var result = await _sut.GetByPatientIdAsync(1);
 
-            Assert.That( result,Is.Not.Null);
+            //Assert
+            Assert.That(result[0].PatientId,Is.EqualTo(1));
         }
 
         [Test]
         public async Task UpdateAsync_ShouldUpdateAppointment()
         {
-            var appointment = new Appointment { DoctorId = 1, PatientId = 1,Date = DateTime.Now };
+            //Arrange
+            var appointment = MockData.GetSampleAppointments().Single();
+
             _context.Appointments.Add(appointment);
+
             await _context.SaveChangesAsync();
 
             appointment.DoctorId = 2;
 
-            var result = await _repository.UpdateAsync(appointment);
+            //Act
+            var result = await _sut.UpdateAsync(appointment);
 
+            //Assert
             Assert.That(result.DoctorId, Is.EqualTo(2));
         }
     }
